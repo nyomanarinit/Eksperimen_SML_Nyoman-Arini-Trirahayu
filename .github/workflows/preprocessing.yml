@@ -1,42 +1,46 @@
-name: Automated Preprocessing
+name: Preprocessing Workflow
 
+# Trigger workflow manual atau saat push ke folder praproses
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    paths:
+      - 'preprocessing/DatasetBank_preprocessing/**'
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  preprocess-data:
+  preprocess:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/checkout@v3
         with:
-          python-version: '3.10'
+          persist-credentials: true  # penting supaya bisa push
 
+      # 2️⃣ Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: |
-          pip install pandas numpy scikit-learn joblib
+          pip install pandas scikit-learn
 
-      - name: Run preprocessing script
+      # 4️⃣ Run preprocessing script
+      - name: Run preprocessing
         run: |
           python preprocessing/automate_nyoman_arini_trirahayu.py
 
-      - name: Commit processed data
+      # 5️⃣ Commit hasil preprocessing jika ada perubahan
+      - name: Commit processed dataset
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           git add preprocessing/DatasetBank_preprocessing/churn_preprocessed.csv
-          git commit -m "Update preprocessing dataset" || echo "No changes to commit"
+          git commit -m "Update dataset preprocessed via workflow" || echo "No changes to commit"
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # akses push otomatis
