@@ -1,0 +1,73 @@
+name: Automated Preprocessing
+
+on:
+  push:
+    branches: 
+      - main
+  workflow_dispatch:
+
+jobs:
+  preprocess:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy scikit-learn joblib
+
+      - name: Run preprocessing script
+        run: |
+          python preprocessing/automate_nyoman_arini_trirahayu.py 2>&1 | tee preprocessing_log.txt
+
+      - name: Validate output dataset
+        run: |
+          OUTPUT="preprocessing/DatasetBank_preprocessing/churn_preprocessed.csv"
+
+          echo "=== VALIDATING DATASET ==="
+
+          if [ ! -f "$OUTPUT" ]; then
+            echo "❌ Output dataset tidak ditemukan!"
+            exit 1
+          fi
+
+          FILESIZE=$(stat -c%s "$OUTPUT")
+          if [ "$FILESIZE" -lt 5000 ]; then
+            echo "❌ File terlalu kecil, kemungkinan corrupt atau preprocessing gagal!"
+            exit 1
+          fi
+
+          echo "✔ File ditemukan"
+          echo "✔ Ukuran file: $FILESIZE bytes"
+          echo "=== VALIDATION PASSED ==="
+
+      - name: Upload preprocessing log (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: preprocessing-log
+          path: preprocessing_log.txt
+
+      - name: Upload processed dataset (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: churn_preprocessed
+          path: preprocessing/DatasetBank_preprocessing/churn_preprocessed.csv
+
+      - name: Commit processed dataset
+        run: |
+          git config --global user.name "${{ secrets.username }}"
+          git config --global user.email "${{ secrets.email }}"
+
+          git add preprocessing/DatasetBank_preprocessing/churn_preprocessed.csv
+
+          git commit -m "Auto-update: churn_preprocessed.csv (validated)" || echo "No changes to commit"
+
+          git push
