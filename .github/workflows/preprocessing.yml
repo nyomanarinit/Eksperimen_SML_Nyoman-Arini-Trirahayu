@@ -26,7 +26,7 @@ jobs:
 
       - name: Run preprocessing script
         run: |
-          python preprocessing/automate_nyoman-aini-trirahayu.py
+          python preprocessing/automate_nyoman-arini-trirahayu.py
 
       - name: Commit preprocessing output
         run: |
