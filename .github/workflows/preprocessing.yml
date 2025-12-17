@@ -28,6 +28,11 @@ jobs:
         run: |
           python preprocessing/automate_nyoman-arini-trirahayu.py
 
+      # 🔥 INI YANG DITAMBAHKAN
+      - name: Append preprocessing timestamp
+        run: |
+          echo "# Last preprocessing run: $(date)" >> preprocessing/churn_preprocessed.csv
+
       - name: Commit preprocessing output
         run: |
           git config --global user.name "github-actions"
